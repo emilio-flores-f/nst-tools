@@ -137,7 +137,66 @@ def ruleAnalysis():
     else: None 
     rule_score.append({'rule':rule['@name'],item_name:item_value,'score':score})
 
-
+def ruleAnalysisDefault():
+    score = 0
+    if device_type == 'firewall':
+        item_name = 'vsys'
+        item_value = vsys_name
+    elif device_type == 'panorama':
+        item_name = 'devicegroup'
+        item_value = dg['@name']
+    # Log End
+    if 'log-end' in rule.keys():
+        if rule['log-end'] == 'yes':    
+            None
+        else:
+            linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no log-end'}
+            no_log_end.append(linea_dict)
+            score = score+1
+    else:
+        linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no log-end'}
+        no_log_end.append(linea_dict)
+        score = score+1
+    # Log Forwarding
+    if 'log-setting' in rule.keys():
+        if len(rule['log-setting']) > 0:
+            None
+        else:
+            linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no log-setting'}
+            no_log_setting.append(linea_dict)
+            score = score+1
+    else:
+        linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no log-setting'}
+        no_log_setting.append(linea_dict)
+        score = score+1
+    # Security Profile
+    if 'profile-setting' in rule.keys():
+        if 'group' in rule['profile-setting'].keys():
+            if rule['profile-setting']['group'] == 'None' and rule['action'] == 'allow':
+                linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no profile-setting'}
+                no_security_profile.append(linea_dict)
+                score = score+1
+            else: None
+        elif 'profiles' in rule['profile-setting'].keys():
+            if rule['profile-setting']['profiles'] == 'None' and rule['action'] == 'allow':
+                linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no profile-setting'}
+                no_security_profile.append(linea_dict)
+                score = score+1
+            else: None
+        else:
+            if rule['action'] == 'allow':
+                linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no profile-setting'}
+                no_security_profile.append(linea_dict)
+                score = score+1
+            else: None
+    else:
+        if rule['action'] == 'allow':
+            linea_dict = {'device':hostname,item_name:item_value,'rule':rule['@name'],'issue':'no profile-setting'}
+            no_security_profile.append(linea_dict)
+            score = score+1
+        else: 
+            None
+    rule_score.append({'rule':rule['@name'],item_name:item_value,'score':score})
 
 if args.type == None:
     if 'devices' in config_file_dict['config']['mgt-config'].keys():
@@ -163,6 +222,9 @@ try:
                                     ruleAnalysis()
                             else:
                                 ruleAnalysis()
+                        for rule in vsys['rulebase']['default-security-rules']['rules']['entry']: # default rules
+                            security_rules.append(rule['@name'])
+                            ruleAnalysisDefault()
                 else:
                     for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase']['security']['rules']['entry']:
                         vsys_name = config_file_dict['config']['devices']['entry']['vsys']['entry']['@name']
@@ -176,6 +238,10 @@ try:
                                 ruleAnalysis()
                         else:
                             ruleAnalysis()
+                    for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase']['default-security-rules']['rules']['entry']: # default rules
+                            security_rules.append(rule['@name'])
+                            ruleAnalysisDefault()
+                            
             else:
                 if isinstance(config_file_dict['config']['devices']['entry']['vsys']['entry'], list):
                     for vsys in config_file_dict['config']['devices']['entry']['vsys']['entry']:
@@ -192,6 +258,10 @@ try:
                                         ruleAnalysis()
                                 else:
                                     ruleAnalysis()
+                        for rule in vsys['rulebase']['default-security-rules']['rules']['entry']: # default rules
+                            if vsys_name == interesting_vsys:
+                                security_rules.append(rule['@name'])
+                                ruleAnalysisDefault()
                 else:
                     for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase']['security']['rules']['entry']:
                         vsys_name = config_file_dict['config']['devices']['entry']['vsys']['entry']['@name']
@@ -206,6 +276,10 @@ try:
                                     ruleAnalysis()
                             else:
                                 ruleAnalysis()
+                    for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase']['default-security-rules']['rules']['entry']: # default rules
+                        if vsys_name == interesting_vsys:
+                            security_rules.append(rule['@name'])
+                            ruleAnalysisDefault()
         else:
             if device_type == 'panorama':
                 device_group_list = []
@@ -272,15 +346,18 @@ try:
         print(f"\n[+] Análisis de {hostname}:\n")
         print(table01)
         print('\n')
-        print('[+] Top 10 Reglas con mayor score:\n')
+        print('[+] Top Reglas con peor score:\n')
         sorted_score_list  = sorted(rule_score, key=lambda rule_score: rule_score['score'], reverse=True)
+        if len(rule_score) >= 10:
+            n = 10
+        else: n = len(rule_score)
         if device_type == 'firewall':
             table02 = PrettyTable(['REGLA','VSYS','SCORE'])
-            for i in range(0,10):
+            for i in range(0,n):
                 table02.add_row([sorted_score_list[i]['rule'],sorted_score_list[i]['vsys'],sorted_score_list[i]['score']])
         elif device_type == 'panorama':
             table02 = PrettyTable(['REGLA','DEVICEGROUP','SCORE'])
-            for i in range(0,10):
+            for i in range(0,n):
                 table02.add_row([sorted_score_list[i]['rule'],sorted_score_list[i]['devicegroup'],sorted_score_list[i]['score']])
             table02.align['DEVICEGROUP'] = 'l'
         table02.align['REGLA'] = 'l'
