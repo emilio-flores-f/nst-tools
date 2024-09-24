@@ -1,3 +1,9 @@
+/requirements/
+
+- python3
+  - xmltodict
+  - prettytable
+
 /script usage/
 
 (optional args: -type)
@@ -13,5 +19,5 @@ python3 pan_policy_analyzer -file filename.xml -type panorama
 Analyze interesting vsys in firewall type:
 python3 pan_policy_analyzer -file filename.xml -type firewall -vsys vsys1
 
-Analyze intereating devicegroup in panorama type
+Analyze interesting devicegroup in panorama type
 python3 pan_policy_analyzer -file filename.xml -type panorama -devicegroup DG-Test
