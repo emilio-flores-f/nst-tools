@@ -1,4 +1,4 @@
-import xmltodict, argparse, pprint
+import xmltodict, argparse
 from prettytable import PrettyTable
 
 parser = argparse.ArgumentParser()
