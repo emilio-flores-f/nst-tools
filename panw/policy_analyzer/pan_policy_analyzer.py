@@ -297,26 +297,26 @@ def main():
                             create_tables('vsys',vsys['@name'])
                 #IsSingleVsys
                 else:
-                    for rule_type in rule_types:
-                        for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase'][rule_type]['rules']['entry']:
-                            vsys_name = config_file_dict['config']['devices']['entry']['vsys']['entry']['@name']
-                            linea_dict_rule_name = {'device':hostname,'rule_name':rule['@name'],'vsys':vsys_name}
-                            security_rules.append(linea_dict_rule_name)
-                            # disabled
-                            if 'disabled' in rule.keys():
-                                if rule['disabled'] == 'yes':
-                                    linea_dict = {'device':hostname,'vsys':vsys_name,'rule':rule['@name'],'issue':'disabled'}
-                                    disabled.append(linea_dict)
-                                else:
-                                    ruleAnalysis(hostname,'vsys',vsys_name,rule,default_flag)
+                    #for rule_type in rule_types:
+                    for rule in config_file_dict['config']['devices']['entry']['vsys']['entry']['rulebase']['security']['rules']['entry']:
+                        vsys_name = config_file_dict['config']['devices']['entry']['vsys']['entry']['@name']
+                        linea_dict_rule_name = {'device':hostname,'rule_name':rule['@name'],'vsys':vsys_name}
+                        security_rules.append(linea_dict_rule_name)
+                        # disabled
+                        if 'disabled' in rule.keys():
+                            if rule['disabled'] == 'yes':
+                                linea_dict = {'device':hostname,'vsys':vsys_name,'rule':rule['@name'],'issue':'disabled'}
+                                disabled.append(linea_dict)
                             else:
-                                if rule_type == 'default-security-rules':
-                                    default_flag = 'yes'
-                                else:
-                                    default_flag = 'no'
                                 ruleAnalysis(hostname,'vsys',vsys_name,rule,default_flag)
-                    if len(no_log_end) + len(no_log_setting) + len(no_security_profile) + len(allow_any_source_or_destination) + len(allow_any_source_and_destination) + len(any_application) + len(any_application_and_service) + len(any_zone) + len(disabled) > 0:
-                        create_tables('vsys',vsys_name)
+                        else:
+                            # if rule_type == 'default-security-rules':
+                            #     default_flag = 'yes'
+                            # else:
+                            default_flag = 'no'
+                            ruleAnalysis(hostname,'vsys',vsys_name,rule,default_flag)
+                if len(no_log_end) + len(no_log_setting) + len(no_security_profile) + len(allow_any_source_or_destination) + len(allow_any_source_and_destination) + len(any_application) + len(any_application_and_service) + len(any_zone) + len(disabled) > 0:
+                    create_tables('vsys',vsys_name)
         else:
             print('[-] Archivo de configuración no válido para análisis. Revise los parámetros e inténtelo nuevamente.')
 
