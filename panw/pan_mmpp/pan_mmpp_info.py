@@ -42,13 +42,15 @@ def main():
    
    html_file_name = f'reporte_{host}_{datetime.now().strftime("%d%m%Y_%H%M%S")}.html'
 
-   system_info_list = {'hostname':'ND','model':'ND','version':'ND','ip-address':'ND','uptime':'ND','serial':'ND','global-protect-client-package-version':'ND','app-version':'ND',
+   system_info_list = {'hostname':'ND','model':'ND','sw-version':'ND','ip-address':'ND','uptime':'ND','serial':'ND','global-protect-client-package-version':'ND','app-version':'ND',
                        'app-release-date':'ND','av-version':'ND','av-release-date':'ND','threat-version':'ND','threat-release-date':'ND','wildfire-version':'ND',
                        'wildfire-release-date':'ND','multi-vsys':'ND'}
    sign_release_date_list = {'app-release-date':'ND','av-release-date':'ND','threat-release-date':'ND','wildfire-release-date':'ND'}
    
    show_system_info = request_get(host,'op&cmd','<show><system><info/></system></show>',api_key)
    print(f'[+] Requesting show_system_info')
+
+   sign_release_html_table = ''
    if show_system_info == 'Request Error':
       print('[-] Error en la generación del request. Revise los parámetros e inténtelo nuevamente.')
    else:
@@ -59,19 +61,25 @@ def main():
                   if sys_key == sig_key:
                      if sig_key == 'app-release-date':
                            if (datetime.now(timezone.utc) - datetime.strptime(f'{system_info_list[sys_key]}00','%Y/%m/%d %H:%M:%S %z')) < timedelta(days=30):
-                              sign_release_date_list[sys_key] = 'OK'
+                              sig_value = 'OK'
                            else:
-                              sign_release_date_list[sys_key] = 'NOK'
+                              sig_value = 'NOK'
                      if sig_key == 'av-release-date' or sig_key == 'threat-release-date':
                            if (datetime.now(timezone.utc) - datetime.strptime(f'{system_info_list[sys_key]}00','%Y/%m/%d %H:%M:%S %z')) < timedelta(days=7):
-                              sign_release_date_list[sys_key] = 'OK'
+                              sig_value = 'OK'
                            else:
-                              sign_release_date_list[sys_key] = 'NOK'
+                              sig_value = 'NOK'
                      if sig_key == 'wildfire-release-date':
                            if (datetime.now(timezone.utc) - datetime.strptime(f'{system_info_list[sys_key]}00','%Y/%m/%d %H:%M:%S %z')) < timedelta(days=1):
-                              sign_release_date_list[sys_key] = 'OK'
+                              sig_value = 'OK'
                            else:
-                              sign_release_date_list[sys_key] = 'NOK'
+                              sig_value = 'NOK'
+                     sign_release_html_template = f'  <tr> \
+                                                      <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">{sys_key}</td> \
+                                                      <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{system_info_list[sys_key]}</br></td> \
+                                                      <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{sig_value}</td> \
+                                                   </tr>'
+                     sign_release_html_table = sign_release_html_table + sign_release_html_template
          else:
                None
 
@@ -90,7 +98,7 @@ def main():
       else:
          for entry in show_preferred_version['sw-updates']['versions']['entry']:
             panos_version_list.append(entry['version'])
-      if system_info_list['version'] in panos_version_list:
+      if system_info_list['sw-version'] in panos_version_list:
          panos_version_status = 'OK'
       else:
          panos_version_status = 'NOK'
@@ -811,20 +819,20 @@ def main():
                                                       </tr> \
                                                       <tr> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">Model</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list[model]}</td> \
+                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list["model"]}</td> \
                                                       </tr> \
                                                          </tr> \
                                                          <tr> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">Multi Vsys</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list['multi-vsys']}</td> \
+                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list["multi-vsys"]}</td> \
                                                       </tr> \
                                                          <tr> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">Serial Number</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list['serial']}</td> \
+                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list["serial"]}</td> \
                                                       </tr> \
                                                       <tr> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">Uptime</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list['uptime']}</td> \
+                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="50%">{system_info_list["uptime"]}</td> \
                                                    </tbody> \
                                                 </table> \
                                              </td> \
@@ -926,7 +934,7 @@ def main():
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{system_software_status}</td> \
                                                       </tr> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">Software Version</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{system_info_list['version']}</td> \
+                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{system_info_list["sw-version"]}</td> \
                                                          <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{panos_version_status}</td> \
                                                       </tr> \
                                                    </tbody> \
@@ -953,26 +961,7 @@ def main():
                                                       </tr> \
                                                    </thead> \
                                                    <tbody style="vertical-align: center; font-size: 16px; line-height: 1.2; mso-line-height-alt: 19px;"> \
-                                                      <tr> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">AV</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{pan_av_version} {"@"}<br>{pan_av_version_rel}</br></td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{pan_av_version_status}</td> \
-                                                      </tr> \
-                                                      <tr> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">Apps</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{pan_app_version} {"@"}<br>{pan_app_version_rel}</br></td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{pan_app_version_status}​</td> \
-                                                      </tr> \
-                                                      <tr> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">Threats</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{pan_threat_version} {"@"}<br>{pan_threat_version_rel}</br></td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{pan_threat_version_status}​</td> \
-                                                      </tr> \
-                                                      <tr> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="33.333333333333336%">Wildfire</td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">​{pan_wf_version} {"@"}<br>{pan_wf_version_rel}</br></td> \
-                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;text-align: center;" width="33.333333333333336%">{pan_wf_version_status}​</td> \
-                                                      </tr> \
+                                                      {sign_release_html_table} \
                                                    </tbody> \
                                                 </table> \
                                              </td> \
